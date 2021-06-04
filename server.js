@@ -3,6 +3,7 @@ const express = require('express');
 const cors = require('cors');
 const mongoose = require("mongoose");
 const bodyParser = require("body-parser");
+const AutoIncrement = require('mongoose-sequence')(mongoose);
 
 const Schema = mongoose.Schema;
 const app = express();
@@ -17,6 +18,9 @@ const shorturlSchema = new Schema({
   creatorIp: String,
   createdDate: Date
 });
+// Makes _id field autoincrement id integer
+shorturlSchema.plugin(AutoIncrement, { inc_field: 'id' });
+
 const ShortURL = mongoose.model("ShortURL", shorturlSchema);
 
 // DB operations
@@ -43,6 +47,14 @@ app.use('/public', express.static(`${process.cwd()}/public`));
 
 app.get('/', function (req, res) {
   res.sendFile(process.cwd() + '/views/index.html');
+});
+
+router.get("/is-mongoose-ok", function (req, res) {
+  if (mongoose) {
+    res.json({ isMongooseOk: !!mongoose.connection.readyState });
+  } else {
+    res.json({ isMongooseOk: false });
+  }
 });
 
 // Your first API endpoint
