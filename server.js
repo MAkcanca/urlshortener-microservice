@@ -37,6 +37,13 @@ const createAndSaveURL = (req, done) => {
   });
 };
 
+const findURLByUrlId = (url_id, done) => {
+  ShortURL.find({ url_id: url_id }, function (err, data) {
+    if (err) return done(err);
+    done(null, data);
+  })
+};
+
 // App
 
 app.use(cors());
@@ -58,8 +65,13 @@ app.get("/is-mongoose-ok", function (req, res) {
 });
 
 // Your first API endpoint
-app.get('/api/shorturl/:id', function (req, res) {
-  res.json({ greeting: 'hello API' });
+app.get('/api/shorturl/:id', function (req, res, next) {
+  var url_id = req.query.id
+  if (!url_id) return res.json({ "error": "Wrong format" })
+  findURLByUrlId(url_id, function (err, data) {
+    if (!data) return next({ "error": "No short URL found for the given input" })
+    res.redirect(data.original_url)
+  });
 });
 
 app.post('/api/shorturl', function (req, res, next) {
