@@ -46,10 +46,18 @@ const findURLByUrlId = (id, done) => {
 };
 
 // Util
-function isValidURL(string) {
-  var res = string.match(/(http(s)?:\/\/.)?(www\.)?[-a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-z]{2,6}\b([-a-zA-Z0-9@:%_\+.~#?&//=]*)/g);
-  return (res !== null)
-};
+function isValidHttpUrl(string) {
+  let url;
+
+  try {
+    url = new URL(string);
+  } catch (_) {
+    return false;
+  }
+
+  return url.protocol === "http:" || url.protocol === "https:";
+}
+
 
 // App
 
@@ -83,9 +91,12 @@ app.get('/api/shorturl/:id', function (req, res, next) {
 });
 
 app.post('/api/shorturl', function (req, res, next) {
-  if (!isValidURL(req.body.url)) return next({ error: 'invalid url' })
-  var url = req.body.url.replace(/(^\w+:|^)\/\//, '');
-  dns.lookup(url, (err, address, family) => {
+  if (!req.body.url || !isValidHttpUrl(req.body.url)) return next({ error: 'invalid url' })
+  console.log(req.body.url)
+
+  const { hostname } = new URL(req.body.url);
+
+  dns.lookup(hostname, (err, address, family) => {
     console.log(err)
     if (err) return next({ error: 'invalid url' })
     createAndSaveURL(req, function (err2, data) {
