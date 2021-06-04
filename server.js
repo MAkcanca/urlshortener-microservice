@@ -18,8 +18,8 @@ const shorturlSchema = new Schema({
   creatorIp: String,
   createdDate: Date
 });
-// Makes _id field autoincrement id integer
-shorturlSchema.plugin(AutoIncrement, { inc_field: 'id' });
+// Makes url_id field autoincrement id integer
+shorturlSchema.plugin(AutoIncrement, { inc_field: 'url_id' });
 
 const ShortURL = mongoose.model("ShortURL", shorturlSchema);
 
@@ -49,7 +49,7 @@ app.get('/', function (req, res) {
   res.sendFile(process.cwd() + '/views/index.html');
 });
 
-router.get("/is-mongoose-ok", function (req, res) {
+app.get("/is-mongoose-ok", function (req, res) {
   if (mongoose) {
     res.json({ isMongooseOk: !!mongoose.connection.readyState });
   } else {
@@ -65,7 +65,7 @@ app.get('/api/shorturl/:id', function (req, res) {
 app.post('/api/shorturl', function (req, res, next) {
   createAndSaveURL(req, function (err, data) {
     if (err) return next(err);
-    res.json({ original_url: data.url, short_url: data._id })
+    res.json({ original_url: data.url, short_url: data.url_id })
   })
 });
 
