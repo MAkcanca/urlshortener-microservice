@@ -4,6 +4,7 @@ const cors = require('cors');
 const mongoose = require("mongoose");
 const bodyParser = require("body-parser");
 const AutoIncrement = require('mongoose-sequence')(mongoose);
+const dns = require('dns');
 
 const Schema = mongoose.Schema;
 const app = express();
@@ -32,16 +33,22 @@ const createAndSaveURL = (req, done) => {
   }
   );
   shorturl.save(function (err, data) {
-    if (err) return console.error(err);
+    if (err) return done(err);
     done(null, data);
   });
 };
 
-const findURLByUrlId = (url_id, done) => {
-  ShortURL.find({ url_id: url_id }, function (err, data) {
+const findURLByUrlId = (id, done) => {
+  ShortURL.findOne({ url_id: id }, function (err, data) {
     if (err) return done(err);
     done(null, data);
   })
+};
+
+// Util
+function isValidURL(string) {
+  var res = string.match(/(http(s)?:\/\/.)?(www\.)?[-a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-z]{2,6}\b([-a-zA-Z0-9@:%_\+.~#?&//=]*)/g);
+  return (res !== null)
 };
 
 // App
@@ -66,19 +73,35 @@ app.get("/is-mongoose-ok", function (req, res) {
 
 // Your first API endpoint
 app.get('/api/shorturl/:id', function (req, res, next) {
-  var url_id = req.query.id
+  var url_id = req.params.id
+
   if (!url_id) return res.json({ "error": "Wrong format" })
   findURLByUrlId(url_id, function (err, data) {
     if (!data) return next({ "error": "No short URL found for the given input" })
-    res.redirect(data.original_url)
+    res.redirect(data.url)
   });
 });
 
 app.post('/api/shorturl', function (req, res, next) {
-  createAndSaveURL(req, function (err, data) {
-    if (err) return next(err);
-    res.json({ original_url: data.url, short_url: data.url_id })
-  })
+  if (!isValidURL(req.body.url)) return next({ error: 'invalid url' })
+  var url = req.body.url.replace(/(^\w+:|^)\/\//, '');
+  dns.lookup(url, (err, address, family) => {
+    console.log(err)
+    if (err) return next({ error: 'invalid url' })
+    createAndSaveURL(req, function (err2, data) {
+      if (err2) return next(err2);
+      return res.json({ original_url: data.url, short_url: data.url_id })
+    })
+  });
+});
+
+app.use(function (err, req, res, next) {
+  if (err) {
+    res
+      .status(err.status || 500)
+      .type("json")
+      .send(err || { "error": "Wrong format" });
+  }
 });
 
 app.listen(port, function () {
