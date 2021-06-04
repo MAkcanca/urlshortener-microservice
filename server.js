@@ -7,7 +7,7 @@ const bodyParser = require("body-parser");
 const Schema = mongoose.Schema;
 const app = express();
 
-
+mongoose.connect(process.env.DB_URI, { useNewUrlParser: true, useUnifiedTopology: true })
 // Basic Configuration
 const port = process.env.PORT || 3000;
 
