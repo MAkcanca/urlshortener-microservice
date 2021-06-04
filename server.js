@@ -17,7 +17,7 @@ const port = process.env.PORT || 3000;
 const shorturlSchema = new Schema({
   url: { type: String, required: true },
   creatorIp: String,
-  createdDate: Date
+  createdDate: { type: Date, expires: '1m', default: Date.now }
 });
 // Makes url_id field autoincrement id integer
 shorturlSchema.plugin(AutoIncrement, { inc_field: 'url_id' });
@@ -28,8 +28,7 @@ const ShortURL = mongoose.model("ShortURL", shorturlSchema);
 const createAndSaveURL = (req, done) => {
   const shorturl = new ShortURL({
     url: req.body.url,
-    creatorIp: req.ip,
-    createdDate: new Date()
+    creatorIp: req.ip
   }
   );
   shorturl.save(function (err, data) {
